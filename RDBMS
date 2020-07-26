@@ -1,0 +1,284 @@
+1) Write a query to show customer id, phone no, customer address line1, customer address line2, city, state, pincode of customers who live either in 'Karnataka' or 'Tamilnadu'. Also check whether the contact type is 'HOME'
+
+SELECT CUST_ID,CUST_PHONE,CUST_ADDR_LINE1,CUST_ADDR_LINE2,CUST_CITY,CUST_STATE,CUST_PIN
+FROM BANK_CUST_CONTACT
+WHERE (CUST_STATE='Karnataka'
+OR CUST_STATE='Tamilnadu')
+AND CONTACT_TYPE='HOME';
+
+
+
+2) Display details (account no, primary customer id, current balance and a/c start date) of active SB accounts in the order of latest start date (first) to earliest start date (last).
+
+SELECT ACCOUNT_NO, PRIMARY_CUST_ID,CURR_BAL_AMT,START_DATE
+FROM BANK_SB_ACCOUNT
+WHERE ACC_STATUS='Active'
+ORDER BY START_DATE ASC;
+
+
+
+
+
+3) Display bank employee designation, id, name and gender of those employees who have a manager, sorted in descending order of designation and ascending order of employee name.
+
+SELECT  DESIGNATION, BANK_EMP_ID, EMP_NAME, EMP_SEX
+FROM BANK_EMPLOYEE
+WHERE DESIGNATION NOT LIKE '%MANAGER%' 
+ORDER BY DESIGNATION DESC,
+EMP_NAME ASC;
+
+
+
+
+
+\\SINGLE ROW FUNCTION
+
+
+
+
+1) Show customer id, capitalized first & last names, day & month (DD-Mon format) of date of birth and change the alias name "DOB" of female customers.
+
+alter session set current_schema=bank;
+SET heading OFF;
+
+SELECT C.CUST_ID, UPPER(C.CUST_FNAME), UPPER(C.CUST_LNAME),  TO_CHAR(C.CUST_DOB, 'DD-Mon')
+FROM BANK_CUSTOMER C
+WHERE C.CUST_SEX='F';
+
+2) Show transaction date, first 20 characters of transaction description (change the column heading to "trans_desc") and amounts of all 'Credit' transactions done during June, 2010.
+
+
+
+alter session set current_schema=bank;
+SET heading OFF;
+
+SELECT C.CUST_ID, UPPER(C.CUST_FNAME), UPPER(C.CUST_LNAME),  TO_CHAR(C.CUST_DOB, 'DD-Mon')
+FROM BANK_CUSTOMER C
+WHERE C.CUST_SEX='F';
+
+
+
+
+GROUP FUNCTION
+
+1) What are the minimum and maxium installment amounts of RD accounts which were started during year 2008
+
+alter session set current_schema=bank;
+SET heading OFF;
+
+SELECT MIN(INSTALLMENT_AMT), MAX(INSTALLMENT_AMT)
+FROM BANK_RD_ACCOUNT
+WHERE TO_CHAR(RD_START_DT,'YYYY')='2008';
+
+
+
+2) Write a query to show designation and the no. of employees (change the column heading to EMP_COUNT) under each designation except 'ATTENDER'. Arrange the output by no. of employees and then by designation.
+
+
+alter session set current_schema=bank;
+SET heading OFF;
+
+SELECT DESIGNATION, COUNT(BANK_EMP_ID) AS EMP_COUNT
+FROM BANK_EMPLOYEE
+WHERE DESIGNATION <> 'ATTENDER'
+GROUP BY DESIGNATION
+ORDER BY COUNT(BANK_EMP_ID), DESIGNATION;
+
+
+
+
+3) Write a query to show customer id and the no of customer id for contact type "OFFICE" and also have those customers who have more than one office phone.
+
+
+alter session set current_schema=bank;
+SET heading OFF;
+
+SELECT CUST_ID, COUNT(CUST_ID)
+FROM BANK_CUST_CONTACT
+WHERE CONTACT_TYPE='OFFICE'
+GROUP BY CUST_ID
+HAVING COUNT(CUST_PHONE)>1;    // USED HAVING BECAUSE HE HAVE MORE THAN ONE OFFICE PHONE
+
+
+
+JOIN
+
+1) Display customer id, first & last names, phone no. and city of those customers who live outside "KARNATAKA" and also phone type should "HOME".
+
+alter session set current_schema=bank;
+SET heading OFF;
+
+SELECT C.CUST_ID, 
+C.CUST_FNAME,
+C.CUST_LNAME,
+BC.CUST_PHONE,
+BC.CUST_CITY
+FROM BANK_CUSTOMER C, BANK_CUST_CONTACT BC
+WHERE C.CUST_ID = BC.CUST_ID 
+AND BC.CUST_STATE<>'Karnataka'
+AND BC.CONTACT_TYPE='HOME';
+
+
+
+2)Show transaction details – SB a/c no., transaction type, date, description and amount, for transaction amounts > 1000. Sort the output based on a/c no, transaction type and date.
+
+alter session set current_schema=bank;
+SET heading OFF;
+
+SELECT S.ACCOUNT_NO, T.TRANS_TYPE, T.TRANS_DT, T.TRANS_DESC, T.TRANS_AMT
+FROM BANK_SB_ACCOUNT S, 
+BANK_TRANSACTION T
+WHERE S.ACCOUNT_NO = T.TRANS_ACC_NO
+AND T.TRANS_AMT>1000
+ORDER BY S.ACCOUNT_NO, T.TRANS_TYPE, T.TRANS_DT;
+
+
+
+3) Display SB account no, customer ids, first & last names, phone no. of primary and secondary customers who have only joint SB accounts and also contact type "HOME".
+
+
+alter session set current_schema=bank;
+SET heading OFF;
+
+SELECT AC.ACCOUNT_NO, 
+C.CUST_ID,
+C.CUST_FNAME,
+C.CUST_LNAME,
+BC.CUST_PHONE
+FROM BANK_SB_ACCOUNT AC, BANK_CUSTOMER C, BANK_CUST_CONTACT BC
+WHERE (C.CUST_ID = AC.PRIMARY_CUST_ID 
+OR C.CUST_ID = AC.SECONDARY_CUST_ID)
+AND AC.PRIMARY_CUST_ID IS NOT NULL 
+AND AC.SECONDARY_CUST_ID IS NOT NULL 
+AND C.CUST_ID = BC.CUST_ID
+AND BC.CONTACT_TYPE = 'HOME';
+
+
+
+
+4) Write a query to show bank employee id, name, designation and transaction description of all managers and assistant managers even though they are not involved in any transaction updates.
+
+alter session set current_schema=bank;
+SET heading OFF;
+
+SELECT E.BANK_EMP_ID,
+E.EMP_NAME,
+E.DESIGNATION,
+T.TRANS_DESC 
+FROM BANK_EMPLOYEE E LEFT OUTER JOIN BANK_TRANSACTION T
+ON E.BANK_EMP_ID = T.BANK_EMP_ID
+WHERE E.DESIGNATION LIKE '%MANAGER%'
+OR E.DESIGNATION LIKE '%ASST.%MGR%';
+
+
+
+5) show all customer id, customer first name, RD a/c no (change the heading to "accountno") and installment amount (change the heading to "installmentamt") even if they do not own an RD a/c. Display 'NA' for Null values.
+
+
+alter session set current_schema=bank;
+SET heading OFF;
+
+SELECT C.CUST_ID,
+C.CUST_FNAME,
+CASE 
+    WHEN RD.ACCOUNT_NO IS NULL THEN 'NA'
+    ELSE TO_CHAR(RD.ACCOUNT_NO)
+END AS ACCOUNT_NO,
+CASE 
+    WHEN RD.INSTALLMENT_AMT IS NULL THEN 'NA'
+    ELSE TO_CHAR(RD.INSTALLMENT_AMT)
+END AS INSTALLMENT_AMT
+FROM BANK_CUSTOMER C, BANK_RD_ACCOUNT RD
+WHERE C.CUST_ID = RD.RD_CUST_ID(+);
+
+
+
+SUBQUERIES
+
+
+
+1) Display account no., fist name and last name of individual customers who have maximum and minimum initial FD amounts.
+
+
+alter session set current_schema=bank;
+SET heading OFF;
+
+SELECT FD.ACCOUNT_NO, C.CUST_FNAME, C.CUST_LNAME
+FROM BANK_FD_ACCOUNT FD, BANK_CUSTOMER C
+WHERE C.CUST_ID = FD.CUST_ID
+AND (FD.INITIAL_AMT = (SELECT MAX(INITIAL_AMT)FROM BANK_FD_ACCOUNT)
+OR FD.INITIAL_AMT = (SELECT MIN(INITIAL_AMT)FROM BANK_FD_ACCOUNT));
+
+
+2) List full details of all types of RD account transactions made by all accounts of customers who are from 'Tamilnadu'. (Use subquery)
+
+alter session set current_schema=bank;
+SET heading OFF;
+
+SELECT *
+FROM BANK_TRANSACTION 
+WHERE TRANS_ACC_NO IN 
+(SELECT ACCOUNT_NO FROM BANK_RD_ACCOUNT 
+WHERE RD_CUST_ID IN
+(SELECT CUST_ID FROM BANK_CUST_CONTACT 
+WHERE CUST_STATE = 'Tamilnadu'));
+
+
+3) display all the columns of bank employees other than 'Attender' who were not involved in any type of bank transaction.
+
+ 
+alter session set current_schema=bank;
+SET heading OFF;
+
+SELECT * 
+FROM BANK_EMPLOYEE E
+WHERE DESIGNATION <> 'ATTENDER'
+AND E.BANK_EMP_ID NOT IN
+( SELECT BANK_EMP_ID
+FROM BANK_TRANSACTION);
+
+
+4) Which individual customer(s) have not provided their home phone no.? Display their cust id and first name. Hint: Customer Type should be "IND" and Contact Type should be "OFFICE"
+
+
+alter session set current_schema=bank;
+SET heading OFF;
+
+SELECT C.CUST_ID, C.CUST_FNAME
+FROM BANK_CUSTOMER C
+WHERE CUST_TYPE = 'IND'
+AND C.CUST_ID NOT IN
+(SELECT CON.CUST_ID
+FROM BANK_CUST_CONTACT CON 
+WHERE CON.CONTACT_TYPE = 'OFFICE');
+
+
+
+5) List the SB account no.(s) on which no transactions have been made so far (Use NOT EXISTS clause in the query)
+
+alter session set current_schema=bank;
+SET heading OFF;
+
+SELECT SB.ACCOUNT_NO
+FROM BANK_SB_ACCOUNT SB
+WHERE NOT EXISTS
+(SELECT T.TRANS_ACC_NO
+FROM BANK_TRANSACTION T
+WHERE SB.ACCOUNT_NO = T.TRANS_ACC_NO);
+
+
+
+
+6) Show details (account no & transaction amount) of those SB a/c debit transactions whose amount is more than the average transaction amount of that S/B account.
+
+alter session set current_schema=bank;
+SET heading OFF;
+
+SELECT SB.ACCOUNT_NO, T.TRANS_AMT
+FROM BANK_SB_ACCOUNT SB INNER JOIN BANK_TRANSACTION T
+ON SB.ACCOUNT_NO = T.TRANS_ACC_NO
+WHERE T.TRANS_TYPE = 'DB'
+AND T.TRANS_AMT>(SELECT AVG(T.TRANS_AMT)
+FROM BANK_TRANSACTION T 
+WHERE SB.ACCOUNT_NO = T.TRANS_ACC_NO);
+
