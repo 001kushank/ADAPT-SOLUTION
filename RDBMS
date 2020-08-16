@@ -1,4 +1,4 @@
-2 OR 3 QUESTIONS I FAIL TO SOLVE. AFTER SOLVING THOSE.... I WILL UPLOAD HERE..........
+
 
 // BASIC SQL FUNCTION
 
@@ -63,6 +63,48 @@ TRANS_AMT
 FROM BANK_TRANSACTION
 WHERE TRANS_TYPE = 'CR' 
 AND TO_CHAR(TRANS_DT, 'MM-YY') = '06-10';
+
+
+3)Write a query to show transaction date, account no., description, amount and transaction type (show 'Credit' for 'CR' and 'Debit' for 'DB') [change the column heading to "trans_type"] for all transaction amounts > 10000 other than RD installments, in the ascending order of transaction type and descending order of transaction date
+
+
+
+alter session set current_schema=bank;
+SET heading OFF;
+
+SELECT 
+TRANS_DT,
+TRANS_ACC_NO,
+TRANS_DESC,
+TRANS_AMT,
+DECODE(TRANS_TYPE, 'CR', 'Credit', 'DB','Debit') 
+FROM BANK_TRANSACTION 
+WHERE TRANS_AMT>10000
+AND TRANS_DESC NOT LIKE '%RD INSTLMNT%'
+ORDER BY TRANS_TYPE ASC, 
+TRANS_DT DESC;
+
+
+4) Display account no., customer id, initial amount in terms of lakhs (rounded off to 2 decimals) [change the column heading to 'INITIALAMTIN_LAKHS'], amount category(amt < 50000 show as 'Low', amt > 50 lakhs as 'High', otherwise, 'Medium') [change the column heading to "AMOUNT_CATEGORY"], start date, maturity date (use term in months to calculate it) [change the column heading to "MATURITY_DATE"] of all 'ACTIVE' (upper case) FD accounts which were started after year 2004.
+
+
+alter session set current_schema=bank;
+SET heading OFF;
+
+SELECT ACCOUNT_NO,
+CUST_ID,
+ROUND((INITIAL_AMT/100000),2) AS INITIALAMTIN_LAKHS,
+CASE 
+    WHEN S.INITIAL_AMT<50000 THEN 'Low'
+    WHEN S.INITIAL_AMT>5000000 THEN 'High'
+    ELSE 'Medium'
+END AS AMOUNT_CATEGORY,
+S.START_DT,
+ADD_MONTHS(S.START_DT,S.FD_TERM_MNTH) AS MATUIRITY_DATE
+FROM BANK_FD_ACCOUNT S
+WHERE TO_CHAR(S.START_DT,'YYYY') > '2004'
+AND S.ACC_STATUS='Active';
+
 
 
 
